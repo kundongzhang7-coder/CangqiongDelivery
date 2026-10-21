@@ -1,0 +1,13 @@
+sky:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: sky_take_out
+    username: root
+    password: your-mysql-password
+  cos:
+    secret-id: your-tencent-cloud-secret-id
+    secret-key: your-tencent-cloud-secret-key
+    region: ap-chengdu
+    bucket-name: your-bucket-name
