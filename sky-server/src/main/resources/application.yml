@@ -46,3 +46,13 @@ sky:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+
+    # 用户端（微信小程序）jwt配置：JwtProperties 中已声明字段，这里必须补齐，否则拦截器取到 null
+    user-secret-key: itcast
+    # 设置jwt过期时间
+    user-ttl: 7200000
+    # 小程序请求头就是 authentication（common/vendor.js request 中确认）
+    user-token-name: authentication
+  wechat:
+    appid: ${sky.wechat.appid}
+    secret: ${sky.wechat.secret}
