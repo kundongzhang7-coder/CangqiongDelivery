@@ -24,4 +24,16 @@ public class ShoppingCartController {
         shoppingCartService.subShoppingCart(shoppingCartDTO);
         return Result.success();
     }
+
+    /**
+     * 添加购物车
+     * @param shoppingCartDTO
+     * @return
+     */
+    @PostMapping("/add")
+    public Result add(@RequestBody ShoppingCartDTO shoppingCartDTO) {
+        log.info("添加购物车，商品为 ：{}", shoppingCartDTO);
+        shoppingCartService.addShoppingCart(shoppingCartDTO);
+        return Result.success();
+    }
 }
