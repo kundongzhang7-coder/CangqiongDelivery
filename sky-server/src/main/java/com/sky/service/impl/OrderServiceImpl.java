@@ -159,6 +159,20 @@ public class OrderServiceImpl implements OrderService {
         // 直接调用下面的模拟回调接口即可完成支付成功流程
         mockVo.setPaySign("MOCK_SIGN_FOR_LEARNING");
 
+        // ===== 学习模式核心：直接模拟“支付成功”，让订单状态流转起来 =====
+        // 真实流程是：前端拿预支付参数调起微信支付 -> 用户付款 -> 微信服务器异步回调
+        //   /notify/paySuccess -> PayNotifyController 解密后调用 paySuccess()，
+        //   把订单改为 已支付/待接单。
+        // 学习模式下 wx.requestPayment 必然失败、微信永远不会来回调，
+        // 所以这里在返回模拟参数的同时，直接调用 paySuccess()，
+        // 等价于“回调已经到达”，订单立刻变成待接单。
+        // 这样后续的商家接单、派送、取消订单、用户催单、来单提醒(WebSocket)等
+        // 接口才能被真实调用和验证。
+        // 企业环境中请删除本段模拟调用（真实回调会触发 paySuccess）。
+        log.info("【学习模式】模拟支付成功，直接更新订单状态，订单号：{}",
+                ordersPaymentDTO.getOrderNumber());
+        this.paySuccess(ordersPaymentDTO.getOrderNumber());
+
         return mockVo;
         // ==================== 本地学习模式 END ====================
 
@@ -593,7 +607,8 @@ public class OrderServiceImpl implements OrderService {
         String lat = location.getString("lat");
         String lng = location.getString("lng");
         //店铺经纬度坐标
-        String shopLngLat = lng + "," + lat;
+        //注意：百度路线规划接口的坐标格式是 "纬度,经度"（lat,lng），不能写成 "经度,纬度"，否则报参数错误
+        String shopLngLat = lat + "," + lng;
 
         map.put("address", address);
 
@@ -608,8 +623,8 @@ public class OrderServiceImpl implements OrderService {
         location = jsonObject.getJSONObject("result").getJSONObject("location");
         lat = location.getString("lat");
         lng = location.getString("lng");
-        //用户经纬度坐标
-        String userLngLat = lng + "," + lat;
+        //用户经纬度坐标（格式同样是 "纬度,经度"）
+        String userLngLat = lat + "," + lng;
 
         map.put("origin", shopLngLat);
         map.put("destination", userLngLat);
@@ -631,6 +646,28 @@ public class OrderServiceImpl implements OrderService {
         if (distance > 5000) {
             throw new OrderBusinessException("订单地址超出配送范围");
         }
+    }
 
+    /**
+     * 用户催单
+     * @param id
+     */
+    @Override
+    public void reminder(Long id) {
+        // 根据订单id查询订单
+        Orders ordersDB = orderMapper.getById(id);
+
+        // 校验订单是否存在
+        if (ordersDB == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        Map map = new HashMap<>();
+        map.put("type", 2); // 2表示用户催单
+        map.put("orderId", id);
+        map.put("content", "订单号：" + ordersDB.getNumber());
+
+        //通过WebSocket向客户端发送消息
+        webSocketServer.sendToAllClient(JSON.toJSONString(map));
     }
 }
