@@ -70,4 +70,11 @@ public interface OrderMapper {
      */
     Double sumByMap(Map map);
 
+    /**
+     * 根据动态条件统计用户数量
+     * @param map
+     * @return
+     */
+    Integer countByMap(Map map);
+
 }
